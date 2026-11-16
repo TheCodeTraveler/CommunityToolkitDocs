@@ -54,22 +54,21 @@ Further reading at: [https://developer.apple.com/documentation/bundleresources/e
 
 Nothing is needed.
 
-# [Tizen](#tab/tizen)
-
-Add permissions to `tizen-manifest.xml`:
-
-```xml
-<privilege>http://tizen.org/privilege/mediastorage</privilege>
-<privilege>http://tizen.org/privilege/externalstorage</privilege>
-```
-
 ---
 
-## Syntax
+## Basic usage
 
-### C#
+The `FolderPicker` can be added to a .NET MAUI application in the following way.
 
-The `FolderPicker` can be used as follows in C#:
+### Request permissions
+
+Developers must manually request Permissions.StorageRead:
+
+```csharp
+var readPermissionsRequest = await Permissions.RequestAsync<Permissions.StorageRead>();
+```
+
+### Pick folder
 
 ```csharp
 async Task PickFolder(CancellationToken cancellationToken)

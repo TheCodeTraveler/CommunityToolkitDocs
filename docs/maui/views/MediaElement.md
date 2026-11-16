@@ -3,7 +3,7 @@ title: MediaElement - .NET MAUI Community Toolkit
 description: "This article explains how to use MediaElement to play video and audio in a .NET MAUI application."
 author: jfversluis
 ms.author: joverslu
-ms.date: 02/15/2024
+ms.date: 11/12/2026
 ---
 
 # MediaElement
@@ -13,13 +13,14 @@ ms.date: 02/15/2024
 - The web, using a URI (HTTP or HTTPS).
 - A resource embedded in the platform application, using the `embed://` URI scheme.
 - Files that come from the app's local filesystem, using the `filesystem://` URI scheme.
+- Any valid source via a `Stream`.
 
 `MediaElement` can use the platform playback controls, which are referred to as transport controls. However, they are disabled by default and can be replaced with your own transport controls. The following screenshots show `MediaElement` playing a video with the platform transport controls:
 
 ![Screenshot of a MediaElement playing a video, on Android and iOS.](../../images/mediaelement/intro.png#lightbox)
 
 > [!NOTE]
-> `MediaElement` is available on iOS, Android, Windows, macOS, and Tizen.
+> `MediaElement` is available on iOS, Android 8.0 (API 26) or higher, Windows, and macOS.
 
 The `MediaElement` uses the following platform implementations.
 
@@ -48,14 +49,18 @@ First the using statement needs to be added to the top of your *MauiProgram.cs* 
 ```csharp
 using CommunityToolkit.Maui.MediaElement;
 ```
+ 
+> In order to use the `MediaElement` correctly the `UseMauiCommunityToolkitMediaElement` method must be called on the `MauiAppBuilder` class when bootstrapping an application the *MauiProgram.cs* file. The following example shows how to perform this. 
 
-In order to use the `MediaElement` correctly the `UseMauiCommunityToolkitMediaElement` method must be called on the `MauiAppBuilder` class when bootstrapping an application the *MauiProgram.cs* file. The following example shows how to perform this.
+
+> [!IMPORTANT]
+> If you require Rich Media Notifications or background playback on Android, set `enableForegroundService` to `true` when calling `UseMauiCommunityToolkitMediaElement`. MediaElement does not require adding additional `AndroidManifest.xml` permissions for the foreground service. When `enableForegroundService` is `true`, the toolkit will automatically add any required Android manifest entries for the foreground service and notifications. If you do not need background playback, you can set this to `false`. If you fail to call this method, an exception will be thrown when trying to use the `MediaElement`.
 
 ```csharp
 var builder = MauiApp.CreateBuilder();
 builder
     .UseMauiApp<App>()
-    .UseMauiCommunityToolkitMediaElement()
+    .UseMauiCommunityToolkitMediaElement(enableForegroundService: true); // Set to `false` if Rich Notifications and background playback is not required
 ```
 
 For more information on how to do this, please refer to the [Get Started](../get-started.md?tabs=CommunityToolkitMauiMediaElement#adding-the-nuget-packages) page.
@@ -77,56 +82,6 @@ public class MainActivity : MauiAppCompatActivity
 {
 }
 ```
-
-#### 2. Add the following to `AndroidManifest.xml` inside the `<application>` tag.
-
-```csharp
- <service android:name="communityToolkit.maui.media.services" android:stopWithTask="true" android:exported="false" android:enabled="true" android:foregroundServiceType="mediaPlayback">
-   <intent-filter>
-     <action android:name="androidx.media3.session.MediaSessionService"/>
-   </intent-filter>
- </service>
-```
-
-#### 3. Update the minimum android API version
-In the project's `.csproj` file, update the minimum android API version to 26.
-```xml
-<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">26.0</SupportedOSPlatformVersion>
-```
-
-#### 4. Add the following permissions to `AndroidManifest.xml`
-
-```csharp
-<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-<uses-permission android:name="android.permission.MEDIA_CONTENT_CONTROL" />
-```
-
-#### Here is an example of required settings in `AndroidManifest.xml`
-
-```csharp
-<service android:name="communityToolkit.maui.media.services" android:stopWithTask="true" android:exported="false" android:enabled="true" android:foregroundServiceType="mediaPlayback">
-    <intent-filter>
-        <action android:name="androidx.media3.session.MediaSessionService"/>
-    </intent-filter>
-</service>
-</application>
-<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
-<uses-permission android:name="android.permission.MEDIA_CONTENT_CONTROL"/>
-```
-
-> [!NOTE]
-> This modification to the Android manifest enables metadata display when playing a video. It provides support for notifications and is essential
- for notifications to function across all relevant APIs. The change introduces a service and grants necessary permissions.
 
 For a full example of this method included in an application please refer to the [.NET MAUI Community Toolkit Sample Application](https://github.com/CommunityToolkit/Maui/blob/main/samples/CommunityToolkit.Maui.Sample/Platforms/Android/MainActivity.cs)
 
@@ -157,24 +112,18 @@ Edit the `Info.plist` for `iOS` and add the following keys.
 
 No setup is required.
 
-
-### [Tizen](#tab/tizen)
-
-No setup is required.
-
 -----
 <!-- markdownlint-enable MD025 -->
 
 ## Supported Formats
 
-The supported multimedia formats can be different per platform. In some cases it can even be dependant on what decoders are available or installed on the operating system that is used while running your app. For more detailed information on which formats are supported on each platform, please refer to the links below.
+The supported multimedia formats can be different per platform. In some cases it can even be dependent on what decoders are available or installed on the operating system that is used while running your app. For more detailed information on which formats are supported on each platform, please refer to the links below.
 
 |Platform| Link | Notes |
 |--------|------|-------|
 | Android | [ExoPlayer Supported Formats](https://developer.android.com/guide/topics/media/exoplayer/supported-formats) | |
 | iOS/macOS | [iOS/macOS Supported Formats](https://stackoverflow.com/a/45898816/1506387) | No official documentation on this exists |
 | Windows | [Windows Supported Formats](/windows/uwp/audio-video-camera/supported-codecs) | On Windows the supported formats are very much dependent on what codecs are installed on the user's machine |
-| Tizen | [Tizen Supported Formats](https://docs.tizen.org/application/native/tutorials/feature/app-multimedia-video) | |
 
 > [!IMPORTANT]
 > If the user is using a Windows N edition, no video playback is supported by default. Windows N editions have no video playback formats installed by design.
@@ -198,6 +147,15 @@ A `MediaElement` can play remote media files using the HTTP and HTTPS URI scheme
 By default, the media that is defined by the `Source` property doesn't immediately start playing after the media is opened. To enable automatic media playback, set the `ShouldAutoPlay` property to `true`.
 
 Platform provided media playback controls are enabled by default, and can be disabled by setting the `ShouldShowPlaybackControls` property to `false`.
+
+### Use Rich Media Notifications
+A `MediaElement` can show rich media notifications on Android, iOS, Mac Catalyst, and Windows when media is playing in the background. To enable rich media notifications, the following steps are required:
+1. Enable background video playback by setting the `enableForegroundService` parameter to `true` when calling the `UseMauiCommunityToolkitMediaElement` method in *MauiProgram.cs*. Refer to the **Initializing the package** section above for more information.
+2. Platform specific setup as described in the [Platform specific initialization](#platform-specific-initialization) section.
+3. Set the `MetadataTitle`, `MetadataArtist`, and `MetadataArtworkUrl` properties to provide metadata for the media that is playing as described in the [Using Metadata](#using-metadata) section.
+
+### Foreground service on Android
+To enable background playback on Android, set the `enableForegroundService` parameter to `true` when calling the `UseMauiCommunityToolkitMediaElement` method in *MauiProgram.cs*. MediaElement does not require adding additional `AndroidManifest.xml` permissions for the foreground service — calling the builder method with `enableForegroundService: true` is sufficient to enable notification and background playback features. When `enableForegroundService` is `true`, the toolkit will automatically add any required Android manifest entries for the foreground service and notifications. If `enableForegroundService` is `false` and you attempt to use background playback features, an exception may be thrown on Android.
 
 ### Using Metadata
 
@@ -224,6 +182,62 @@ remote URL with artwork for the lockscreen. It should be at least 1080P for best
 a Url or embedded image from App Package. If you are setting it in code behind you need to set the source in code behind. The source should
 be set last. If you set the metadata in XAML or in constructor this note can be safely ignored.
 
+### Using TextureView
+
+A `MediaElement` can use `TextureView` on Android Platform. The platform default behavior is to use `SurfaceView`. Using Texture View adds support
+to allow transparencies and other effects. This is set by changing the builder to use
+
+```csharp
+.UseMauiCommunityToolkitMediaElement(static options => 
+{
+				options.SetDefaultAndroidViewType(AndroidViewType.TextureView);
+})
+```
+
+You can set `TextureView` for each media element you use as well. It can be set in `XAML` and codebehind. Using it this way will override the builder command `.UseMauiCommunityToolkitMediaElement()`.
+
+```csharp
+var mediaElement = new MediaElement
+{
+    AndroidViewType = AndroidViewType.TextureView
+}
+```
+
+```xaml
+<toolkit:MediaElement AndroidViewType="TextureView" />
+```
+
+> [!IMPORTANT]
+> We do not recommend using TextureView unless you have a specific need for it. It has possible performance related issues if enabled and is recommended only for those that need transparencies and other advanced features.
+
+### Display video inside a `Border` on Android 10 and 11
+
+On Android 10 and 11 (API 29 and 30), the video of a `MediaElement` that uses the default `SurfaceView` isn't visible when the `MediaElement` is inside a .NET MAUI `Border`: the audio plays, but the area of the video shows the background of the page. The `Border` draws its content into a hardware layer, and on these Android versions a `SurfaceView` can't show its video through that layer. For more information, see [dotnet/maui#40186](https://github.com/dotnet/maui/issues/40186).
+
+To display the video, either:
+
+- Use `TextureView` for this `MediaElement`, as described in [Using TextureView](#using-textureview):
+
+    ```xaml
+    <Border>
+        <toolkit:MediaElement AndroidViewType="TextureView" Source="embed://video.mp4" />
+    </Border>
+    ```
+
+- Or remove the hardware layer from the `Border` on Android:
+
+    ```csharp
+    border.HandlerChanged += (sender, e) =>
+    {
+    #if ANDROID
+        if (border.Handler?.PlatformView is Android.Views.View platformView)
+        {
+            platformView.SetLayerType(Android.Views.LayerType.None, null);
+        }
+    #endif
+    };
+    ```
+
 ### Play local media
 
 Local media can be played from the following sources:
@@ -232,13 +246,13 @@ Local media can be played from the following sources:
 - Files that come from the app's local filesystem, using the `filesystem://` URI scheme.
 
 > [!NOTE]
-> The shorthand `embed://` and `filesystem://` only work from XAML. In code, please use `MediaSource.FromResource()` and `MediaSource.FromFile()` respectively. Using these methods, you can omit the the `embed://` and `filesystem://` prefixes. The rest of the path should be the same.
+> The shorthand `embed://` and `filesystem://` only work when `Source` is set from a string in XAML. In code, please use `MediaSource.FromResource()` and `MediaSource.FromFile()` respectively. Using these methods, you can omit the `embed://` and `filesystem://` prefixes. The rest of the path should be the same. Stream-backed sources don't have an equivalent URI-style XAML shorthand. To use a stream source with XAML, bind `Source` to a `MediaSource` instance created in code.
 
 ### Play media embedded in the app package
 
 A `MediaElement` can play media files that are embedded in the app package, using the `embed://` URI scheme. Media files are embedded in the app package by placing them in the platform project.
 
-To enable a media file for playback from the local resources add the file to the `Resources/Raw` folder of you .NET MAUI project. When a file is added in the root, the URI would be `embed://MyFile.mp4`.
+To enable a media file for playback from the local resources add the file to the `Resources/Raw` folder of your .NET MAUI project. When a file is added in the root, the URI would be `embed://MyFile.mp4`.
 
 You can also place files in sub folders. If `MyFile.mp4` would be in `Resources/Raw/MyVideos` then the URI to use it with `MediaElement` would be `embed://MyVideos/MyFile.mp4`.
 
@@ -249,13 +263,52 @@ An example of how to use this syntax in XAML can be seen below.
               ShouldShowPlaybackControls="True" />
 ```
 
+### Play media from a Stream
+
+You can play media from a `Stream`, which enables scenarios where end-to-end capture and playback remains in memory.
+
+Consider for example capturing a video using [`MediaPicker`](/dotnet/maui/platform-integration/device-media/picker):
+
+```csharp
+var videoResult = await MediaPicker.Default.CaptureVideoAsync(new MediaPickerOptions
+{
+    Title = "Capture Video"
+});
+
+if (videoResult is null)
+{
+    return;
+}
+```
+
+`videoResult` is a `FileResult`, and its stream can be read by a `MediaElement`.
+
+
+```xaml
+<toolkit:MediaElement x:Name="MyMediaElement" />
+```
+
+Copying it to a new stream lets you reset the position to 0 so the `MediaElement` can read it correctly. Keep that stream alive for the duration of playback, and dispose it when it's no longer needed.
+
+```csharp
+await using var stream = await videoResult.OpenReadAsync();
+var memoryStream = new MemoryStream();
+await stream.CopyToAsync(memoryStream);
+memoryStream.Position = 0;
+
+MyMediaElement.Source = MediaSource.FromStream(memoryStream);
+```
+
+This may be particularly useful for scenarios with security requirements that don't allow saving data outside the app's sandboxed environment.
+
 ## Understand MediaSource types
 
-A `MediaElement` can play media by setting its `Source` property to a remote or local media file. The `Source` property is of type `MediaSource`, and this class defines three static methods:
+A `MediaElement` can play media by setting its `Source` property to a remote or local media file. The `Source` property is of type `MediaSource`, and this class defines four static methods:
 
 - `FromFile`, returns a `FileMediaSource` instance from a `string` argument.
 - `FromUri`, returns a `UriMediaSource` instance from a `Uri` argument.
 - `FromResource`, returns a `ResourceMediaSource` instance from a `string` argument.
+- `FromStream`, returns a `StreamMediaSource` instance from a `Stream` argument.
 
 In addition, the `MediaSource` class also has implicit operators that return `MediaSource` instances from `string` and `Uri` arguments.
 
@@ -267,6 +320,7 @@ The `MediaSource` class also has these derived classes:
 - `FileMediaSource`, which is used to specify a local media file from a `string`. This class has a `Path` property that can be set to a `string`. In addition, this class has implicit operators to convert a `string` to a `FileMediaSource` object, and a `FileMediaSource` object to a `string`.
 - `UriMediaSource`, which is used to specify a remote media file from a URI. This class has a `Uri` property that can be set to a `Uri`.
 - `ResourceMediaSource`, which is used to specify an embedded file that is provided through the app's resource files. This class has a `Path` property that can be set to a `string`.
+- `StreamMediaSource`, which is used to specify a stream that is read incrementally from memory, a file, or a remote source.
 
 > [!NOTE]
 > When a `FileMediaSource` object is created in XAML, a type converter is invoked to return a `FileMediaSource` instance from a `string`.
@@ -294,6 +348,21 @@ The `MediaElementState` enumeration defines the following members:
 - `Failed` indicates that the `MediaElement` failed to load or play the media. This can occur while trying to load a new media item, when attempting to play the media item or when the media playback is interrupted due to a failure. Use the `MediaFailed` event to retrieve additional details.
 
 It's generally not necessary to examine the `CurrentState` property when using the `MediaElement` transport controls. However, this property becomes important when implementing your own transport controls.
+
+## Handle exceptions thrown while the source changes
+
+Changing the `Source` property raises events while the new source is applied: `StateChanged` (for example for `Opening`), `PropertyChanging` and `PropertyChanged` (for example of `CurrentState`, `Duration` and `Position`), `MediaFailed` for a source that can't be applied, and, on Android, `MediaOpened`. The code that sets `Source` is often .NET MAUI itself, from XAML or a binding, so it can't catch an exception that one of these handlers throws.
+
+For that reason, an exception that one of these handlers throws doesn't reach the code that set `Source`. The `MediaElement` logs it and applies the source anyway. Once the change has ended, it reports the first of these exceptions once through the `MediaFailed` event. The `ErrorMessage` of the `MediaFailedEventArgs` names the type and the message of the exception, and `CurrentState` isn't set to `Failed`, because the source itself didn't fail. An exception that a `MediaFailed` handler throws while it receives that report is only logged.
+
+```csharp
+mediaElement.MediaFailed += (sender, e) => Trace.WriteLine(e.ErrorMessage);
+```
+
+> [!IMPORTANT]
+> An exception thrown by one of these handlers no longer reaches the code that sets `Source`. If your code caught it around the assignment of `Source`, handle the `MediaFailed` event instead.
+
+This doesn't apply to the events that the player raises after the change has ended, for example `MediaOpened` on iOS, Mac Catalyst and Windows.
 
 ## Implement custom transport controls
 
@@ -384,7 +453,7 @@ Media playback controls implemented by each platform include a volume bar. This 
 A custom volume bar can be implemented using a [`Slider`](xref:Microsoft.Maui.Controls.Slider), as shown in the following example:
 
 ```xaml
-<StackLayout>
+<VerticalStackLayout>
     <toolkit:MediaElement ShouldAutoPlay="False"
                           Source="{StaticResource AdvancedAsync}" />
     <Slider Maximum="1.0"
@@ -392,7 +461,7 @@ A custom volume bar can be implemented using a [`Slider`](xref:Microsoft.Maui.Co
             Value="{Binding Volume}"
             Rotation="270"
             WidthRequest="100" />
-</StackLayout>
+</VerticalStackLayout>
 ```
 
 In this example, the [`Slider`](xref:Microsoft.Maui.Controls.Slider) data binds its `Value` property to the `Volume` property of the `MediaElement`. This is possible because the `Volume` property uses a `TwoWay` binding. Therefore, changing the `Value` property will result in the `Volume` property changing.
@@ -401,42 +470,6 @@ In this example, the [`Slider`](xref:Microsoft.Maui.Controls.Slider) data binds 
 > The `Volume` property has a validation callback that ensures that its value is greater than or equal to 0.0, and less than or equal to 1.0.
 
 For more information about using a [`Slider`](xref:Microsoft.Maui.Controls.Slider) see, [.NET MAUI Slider](/dotnet/maui/user-interface/controls/slider)
-
-## Clean up `MediaElement` resources
-
-To prevent memory leaks you will have to free the resources of `MediaElement`. This can be done by disconnecting the handler.
-Where you need to do this is dependant on where and how you use `MediaElement` in your app, but typically if you have a `MediaElement` on a single page and are not playing media in the background, you want to free the resources when the user navigates away from the page.
-
-Below you can find a snippet of sample code which shows how to do this. First, make sure to hook up the `Unloaded` event on your page.
-
-```xaml
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
-             x:Class="MediaElementDemos.FreeResourcesPage"
-             Title="Free Resources"
-             Unloaded="ContentPage_Unloaded">
-    
-    <toolkit:MediaElement x:Name="mediaElement"
-                          ShouldAutoPlay="False"
-                          ... />
-</ContentPage>
-```
-
-Then in the code-behind, call the method to disconnect the handler.
-
-```csharp
-public partial class FreeResourcesPage : ContentPage
-{
-    void ContentPage_Unloaded(object? sender, EventArgs e)
-    {
-        // Stop and cleanup MediaElement when we navigate away
-        mediaElement.Handler?.DisconnectHandler();
-    }
-}
-```
-
-To read more about handlers, please see the .NET MAUI documentation on [Handlers](/dotnet/maui/user-interface/handlers).
 
 ## Properties
 
@@ -454,8 +487,8 @@ To read more about handlers, please see the .NET MAUI documentation on [Handlers
 | ShouldKeepScreenOn | `bool` | Determines whether the device screen should stay on during media playback. This is a bindable property. | `false` |
 | ShouldMute | `bool` | Determines whether the audio is currently muted. This is a bindable property. | `false` |
 | ShouldShowPlaybackControls | `bool` | Determines whether the platforms playback controls are displayed. This is a bindable property. Note that on iOS and Windows the controls are only shown for a brief period after interacting with the screen. There is no way of keeping the controls visible at all times. | `true` |
-| Source | `MediaSource?` | The source of the media loaded into the control. | `null` |
-| Speed | `double` | Determines the playback speed of the media. This is a bindable property | `1` |
+| Source | `MediaSource?` | The source of the media loaded into the control. A source without data, for example a `UriMediaSource` without a `Uri` or a `StreamMediaSource` without a stream, empties the player and reports `MediaElementState.None`, like a `null` source. | `null` |
+| Speed | `double` | Determines the playback speed of the media. This is a bindable property. On Windows, a playback rate that the player reports after a newer `Speed` was set doesn't change `Speed` back. | `1` |
 | MediaHeight | `int` | The height of the loaded media in pixels. This is a read-only, bindable property. Not reported for non-visual media and might not always be populated on iOS/macOS for live streamed content. | `0` |
 | MediaWidth | `int` | The width of the loaded media in pixels. This is a read-only, bindable property. Not reported for non-visual media and might not always be populated on iOS/macOS for live streamed content. | `0` |
 | Volume | `double` | Determines the media's volume, which is represented on a linear scale between 0 and 1. This is a bindable property. | `1` |
@@ -466,7 +499,7 @@ To read more about handlers, please see the .NET MAUI documentation on [Handlers
 |---------|---------|
 | MediaOpened | Occurs when the media stream has been validated and opened. |
 | MediaEnded | Occurs when the `MediaElement` finishes playing its media. |
-| MediaFailed | Occurs when there's an error associated with the media source. |
+| MediaFailed | Occurs when there's an error associated with the media source. It is also raised once when an event handler threw an exception while `Source` changed. See [Handle exceptions thrown while the source changes](#handle-exceptions-thrown-while-the-source-changes). |
 | PositionChanged | Occurs when the `Position` property value has changed. |
 | SeekCompleted | Occurs when the seek point of a requested seek operation is ready for playback. |
 
@@ -474,10 +507,10 @@ To read more about handlers, please see the .NET MAUI documentation on [Handlers
 
 |Event  |Description  |
 |---------|---------|
-| Play | Starts playing the loaded media. |
+| Play | Starts playing the loaded media. On Android, iOS and Mac Catalyst, media that played to its end starts again from its start. |
 | Pause | Pauses playback of the current media. |
 | Stop | Stops playback and resets the position of the current media. |
-| SeekTo | Takes a `TimeSpan` value to set the `Position` property to and takes a `CancellationToken` to cancel the `Task`. |
+| SeekTo | Takes a `TimeSpan` value to set the `Position` property to and takes a `CancellationToken` to cancel the `Task`. A position outside of the media is clamped to it: a position before the start seeks to the start, and a position beyond `Duration` seeks to the end. The seek then completes and raises `SeekCompleted` like any other. On iOS and Mac Catalyst, it throws an `InvalidOperationException` while the media isn't ready to play yet. On Windows, a `SeekTo` while no media is loaded, or while the loaded media can't seek, seeks nothing: its task completes, and `SeekCompleted` isn't raised. |
 
 ## Examples
 

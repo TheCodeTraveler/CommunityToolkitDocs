@@ -2,7 +2,7 @@
 title: SpeechToText - .NET MAUI Community Toolkit
 author: VladislavAntonyuk
 description: The SpeechToText provides the ability to convert speech to text.
-ms.date: 05/26/2023
+ms.date: 11/10/2026
 ---
 
 # SpeechToText
@@ -33,8 +33,6 @@ Add permissions to `Info.plist`
 <string>SpeechToText requires microphone usage</string> 
 ```
 
-For `OfflineSpeechToText`, iOS 13.0 or higher is required.
-
 # [Windows](#tab/windows)
 
 Add permissions to `Package.appxmanifest`
@@ -45,21 +43,31 @@ Add permissions to `Package.appxmanifest`
 </Capabilities>
 ```
 
-# [Tizen](#tab/tizen)
-
-Add permissions to `tizen-manifest.xml`:
-
-```xml
-<privilege>http://tizen.org/feature/microphone</privilege>
-```
-
 ---
 
-## Syntax
+## Basic usage
 
-### C#
+The `SpeechToText` can be added to a .NET MAUI application in the following way.
 
-The `SpeechToText` can be used as follows in C#:
+> [!NOTE]
+> The methods in this API accept a `CancellationToken` to cancel asynchronous operations. A `CancellationToken` can be obtained by creating a [`CancellationTokenSource`](/dotnet/api/system.threading.cancellationtokensource) and accessing its `.Token` property. You can also use `CancellationToken.None` if you don't need to cancel the operation. For more detail on how to provide a `CancellationToken` refer to the [Microsoft documentation](/dotnet/standard/threading/cancellation-in-managed-threads).
+
+### Request permissions
+
+Developers must manually request Permissions.Microphone and also call ISpeechToText.RequestPermissions():
+    
+```csharp
+static async Task<bool> ArePermissionsGranted(ISpeechToText speechToText)
+{
+    var microphonePermissionStatus = await Permissions.RequestAsync<Permissions.Microphone>();
+    var isSpeechToTextRequestPermissionsGranted = await speechToText.RequestPermissions(CancellationToken.None);
+
+    return microphonePermissionStatus is PermissionStatus.Granted
+            && isSpeechToTextRequestPermissionsGranted;
+}
+```
+
+### Speech To Text
 
 ```csharp
 async Task StartListening(CancellationToken cancellationToken)
@@ -127,6 +135,7 @@ The `SpeechToTextOptions` class provides the ability to configure the speech rec
 |---------|---------|---------|
 | Culture | `CultureInfo` | The spoken language to use for speech recognition. |
 | ShouldReportPartialResults | `bool` | Gets or sets if include partial results. `True` by default. |
+| AutoStopSilenceTimeout | `TimeSpan` | The duration of continuous silence after which speech recognition will automatically stop. `TimeSpan.MaxValue` by default indicates that auto-stop based on silence is disabled. |
 
 
 ### SpeechToTextResult
@@ -168,7 +177,7 @@ public static class MauiProgram
 
         builder.Services.AddSingleton<ISpeechToText>(SpeechToText.Default);
         // For offline recognition
-        // builder.Services.AddSingleton<IOfflineSpeechToText>(OfflineSpeechToText.Default);
+        // builder.Services.AddSingleton<ISpeechToText>(OfflineSpeechToText.Default);
         return builder.Build();
     }
 }
@@ -182,6 +191,7 @@ Now you can inject the service like this:
 public partial class MainPage : ContentPage
 {
     private readonly ISpeechToText speechToText;
+    private CancellationTokenSource? cancellationTokenSource;
 
 	public MainPage(ISpeechToText speechToText)
 	{
@@ -191,14 +201,17 @@ public partial class MainPage : ContentPage
 	
 	public async void Listen(object sender, EventArgs args)
 	{
-		var isGranted = await speechToText.RequestPermissions(cancellationToken);
+		cancellationTokenSource?.Cancel();
+		cancellationTokenSource = new CancellationTokenSource();
+
+		var isGranted = await speechToText.RequestPermissions(cancellationTokenSource.Token);
         if (!isGranted)
         {
             await Toast.Make("Permission not granted").Show(CancellationToken.None);
             return;
         }
 
-        await speechToText.StartListenAsync(new SpeechToTextOptions { Culture = CultureInfo.CurrentCulture, ShouldReportPartialResults = true }, CancellationToken.None);
+        await speechToText.StartListenAsync(new SpeechToTextOptions { Culture = CultureInfo.CurrentCulture, ShouldReportPartialResults = true }, cancellationTokenSource.Token);
 	}
 }
 ```

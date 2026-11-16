@@ -215,6 +215,8 @@ items:
   items:
     - name: Overview
       href: platform-specific/index.md
+    - name: "DialogFragment (Android)"
+      href: platform-specific/DialogFragment-customization.md
     - name: "Navigation Bar (Android)"
       href: platform-specific/navigation-bar.md
 - name: "Views"
@@ -231,16 +233,24 @@ items:
       href: views/Expander.md
     - name: "LazyView"
       href: views/LazyView.md
-    - name: "Map (Windows)"
+    - name: "Map (Removed)"
       href: views/Map.md 
     - name: "MediaElement"
       href: views/MediaElement.md
+    - name: "RatingView"
+      href: views/RatingView.md
     - name: "Popup"
       items:
         - name: Overview
           href: views/Popup.md
         - name: "Popup Service"
           href: views/popup-service.md
+        - name: "Customizing Popup behavior and appearance"
+          href: views/popup/popup-options.md
+        - name: "Returning a value from a Popup"
+          href: views/popup/popup-result.md
+        - name: "Combining Popup features to provide a comprehensive example"
+          href: views/popup/popup-complex.md
     - name: SemanticOrderView
       href: views/semantic-order-view.md
 - name: C# Markup

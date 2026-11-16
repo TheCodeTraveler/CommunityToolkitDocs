@@ -2,7 +2,7 @@
 title: Getting Started with the .NET Multi-platform App UI (.NET MAUI) Community Toolkit
 author: bijington
 description: The toolkit is available as a set of NuGet packages that can be added to any existing or new .NET MAUI project.
-ms.date: 01/23/2023
+ms.date: 11/10/2026
 ---
 
 # Getting Started with the .NET Multi-platform App UI (.NET MAUI) Community Toolkit
@@ -48,7 +48,7 @@ builder
 
 To use the features of the toolkit please refer to the documentation pages for each specific feature.
 
-### [CommunityToolkit.Maui.Markup](#tab/CommunityToolkitMauiMarkup)
+### [Markup](#tab/CommunityToolkitMauiMarkup)
 
 This package is a set of fluent helper methods and classes to simplify building declarative .NET MAUI user interfaces in C#.
 
@@ -75,53 +75,12 @@ builder
 
 To use the features of the toolkit please refer to the documentation pages for each specific feature.
 
-### [CommunityToolkit.Maui.Maps](#tab/CommunityToolkitMauiMaps)
+### [Maps](#tab/CommunityToolkitMauiMaps)
 
-This package enables you to display a map in your .NET MAUI Windows application.
+> [!WARNING]
+> `CommunityToolkit.Maui.Maps` was deprecated in the toolkit's last .NET 10 release and is removed in the .NET 11 release. The package has no .NET 11 version. Use .NET MAUI's own `Map` from the `Microsoft.Maui.Controls.Maps` package instead. For the steps to move to it, see [Map](views/Map.md).
 
-> [!IMPORTANT]
-> Bing Maps has stopped giving out new API keys that are needed for this control to work. We are currently deciding if we should update this control to use the WinUI control that uses Azure Maps or that we will wait for the official .NET MAUI first-party implementation for this.
-> For the time being that means you cannot use this control if you do not already have a Bing Maps API key. Bing Maps as a whole will be discontinued entirely on June 30th, 2025.
-
-**Package name:** `CommunityToolkit.Maui.Maps`
-
-**Package url:** https://www.nuget.org/packages/CommunityToolkit.Maui.Maps
-
-#### Initializing the package
-
-First the using statement needs to be added to the top of your *MauiProgram.cs* file
-
-```csharp
-using CommunityToolkit.Maui.Maps;
-```
-
-In order to use the `Map` correctly the `.UseMauiCommunityToolkitMaps` method must be called on the `MauiAppBuilder` class when bootstrapping an application the *MauiProgram.cs* file. This method expects a valid Bing Maps API key which you can obtain through the [Bing Maps Portal](https://www.bingmapsportal.com/).
-
-The following example shows how to perform this.
-
-```csharp
-var builder = MauiApp.CreateBuilder();
-builder
-    .UseMauiApp<App>()
-    .UseMauiCommunityToolkitMaps("YOUR_API_KEY")
-```
-
-When using the .NET MAUI Community Toolkit Map for Windows and the regular .NET MAUI Maps together, you will need to make sure that each initialization call is only made for the relevant platform. The following example shows how to do this.
-
-```csharp
-var builder = MauiApp.CreateBuilder();
-builder
-    .UseMauiApp<App>()
-#if ANDROID || IOS
-    .UseMauiMaps()
-#elif WINDOWS
-    .UseMauiCommunityToolkitMaps("YOUR_API_KEY")
-#endif
-```
-
-For more information on how to initialize the map on iOS and Android, as well as how to work with the map control API, see the [.NET MAUI Maps documentation](/dotnet/maui/user-interface/controls/map).
-
-### [CommunityToolkit.Maui.MediaElement](#tab/CommunityToolkitMauiMediaElement)
+### [MediaElement](#tab/CommunityToolkitMauiMediaElement)
 
 This package enables you to play audio and video in your .NET MAUI application.
 
@@ -138,17 +97,20 @@ using CommunityToolkit.Maui;
 ```
 
 In order to use the `MediaElement` correctly the `UseMauiCommunityToolkitMediaElement` method must be called on the `MauiAppBuilder` class when bootstrapping an application the *MauiProgram.cs* file. The following example shows how to perform this.
+You must specify whether to enable the foreground service on Android by setting the `enableForegroundService` parameter to true or false. If you require Rich Media Notifications or background playback on Android, set `enableForegroundService` to `true` when calling `UseMauiCommunityToolkitMediaElement`.
+
+Note: `MediaElement` does not require adding additional `AndroidManifest.xml` permissions for the foreground service. Calling the builder method with `enableForegroundService: true` is sufficient to enable notification and background playback features. When `enableForegroundService` is `true`, the toolkit will automatically add any required Android manifest entries for the foreground service and notifications. If `enableForegroundService` is `false` and you attempt to use background playback features, an exception may be thrown on Android.
 
 ```csharp
 var builder = MauiApp.CreateBuilder();
 builder
     .UseMauiApp<App>()
-    .UseMauiCommunityToolkitMediaElement()
+    .UseMauiCommunityToolkitMediaElement(enableForegroundService: true);
 ```
 
 To use the features of the toolkit please refer to the documentation pages for each specific feature.
 
-### [CommunityToolkit.Maui.Camera](#tab/CommunityToolkitMauiCamera)
+### [Camera](#tab/CommunityToolkitMauiCamera)
 
 This package enables you to connect to a camera, display a preview from the camera and take photos.
 
