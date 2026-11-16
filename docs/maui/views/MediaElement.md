@@ -217,7 +217,7 @@ A string in XAML converts as it does for `Source`:
 
 - `embed://` is a file in the app package.
 - `filesystem://` is a local file.
-- Any other absolute URI, such as `https://`, is a URI.
+- Any other absolute URI, such as `https://`, is a URI (a `file://` URI is a local file).
 - Any other string is a file path. Write a file in the app package as `embed://`, because a relative path such as `images/cover.png` is read as a file path.
 
 #### Things to know
@@ -227,15 +227,15 @@ A string in XAML converts as it does for `Source`:
 - **Not supported for artwork:**
   - `StreamMediaSource` is ignored.
   - The `HttpHeaders` of a `UriMediaSource` aren't sent when the artwork is downloaded.
-- **Windows:** media without usable artwork now clears the thumbnail of the previous media in the system media transport controls. Before, the old thumbnail stayed.
+- **Windows:** media without usable artwork now clears the thumbnail of the previous media in the system media transport controls. Through MediaElement 12.0.0, the old thumbnail stayed.
 
 #### Migrate from `MetadataArtworkUrl`
 
-`MetadataArtworkUrl` is a `string` property that still works, but it's marked `[Obsolete]`. Using it gives a compiler warning (`CS0618` in C#, `XC0618` in XAML). The warning is an error only if your project sets `WarningsAsErrors`. Use `MetadataArtworkSource` instead.
+`MetadataArtworkUrl` is a `string` property that still works, but it's marked `[Obsolete]`. Using it gives a compiler warning (`CS0618` in C#, `XC0618` in XAML). The warning is an error only if your project treats warnings as errors (`TreatWarningsAsErrors`, or `CS0618`/`XC0618` in `WarningsAsErrors`). Use `MetadataArtworkSource` instead.
 
 - `MetadataArtworkUrl` is used only while `MetadataArtworkSource` is `null`. Nothing is copied between the two properties.
 - `MetadataArtworkSource` wins whenever it isn't `null`, whichever of the two you set first. Set it back to `null` to use `MetadataArtworkUrl` again.
-- Every string that gave artwork in v17.0.0 still gives the same artwork. This includes `http` and `https` URLs, file URIs, absolute paths, Android relative asset paths such as `exoplayer/art.png`, Windows `ms-appx:///` and `ms-appdata:///` URIs, and any URL that Apple's `NSURL` loaded.
+- Every string that gave artwork in MediaElement 12.0.0 still gives the same artwork. This includes `http` and `https` URLs, file URIs, absolute paths, Android relative asset paths such as `exoplayer/art.png`, Windows `ms-appx:///` and `ms-appdata:///` URIs, and any URL that Apple's `NSURL` loaded.
 - Local files and files in the app package now work through `MetadataArtworkUrl` too.
 
 | Before | After |
