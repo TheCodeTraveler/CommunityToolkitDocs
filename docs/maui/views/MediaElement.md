@@ -3,7 +3,7 @@ title: MediaElement - .NET MAUI Community Toolkit
 description: "This article explains how to use MediaElement to play video and audio in a .NET MAUI application."
 author: jfversluis
 ms.author: joverslu
-ms.date: 11/12/2026
+ms.date: 11/15/2026
 ---
 
 # MediaElement
@@ -152,35 +152,97 @@ Platform provided media playback controls are enabled by default, and can be dis
 A `MediaElement` can show rich media notifications on Android, iOS, Mac Catalyst, and Windows when media is playing in the background. To enable rich media notifications, the following steps are required:
 1. Enable background video playback by setting the `enableForegroundService` parameter to `true` when calling the `UseMauiCommunityToolkitMediaElement` method in *MauiProgram.cs*. Refer to the **Initializing the package** section above for more information.
 2. Platform specific setup as described in the [Platform specific initialization](#platform-specific-initialization) section.
-3. Set the `MetadataTitle`, `MetadataArtist`, and `MetadataArtworkUrl` properties to provide metadata for the media that is playing as described in the [Using Metadata](#using-metadata) section.
+3. Set the `MetadataTitle`, `MetadataArtist`, and `MetadataArtworkSource` properties to provide metadata for the media that is playing as described in the [Using Metadata](#using-metadata) section.
 
 ### Foreground service on Android
 To enable background playback on Android, set the `enableForegroundService` parameter to `true` when calling the `UseMauiCommunityToolkitMediaElement` method in *MauiProgram.cs*. MediaElement does not require adding additional `AndroidManifest.xml` permissions for the foreground service — calling the builder method with `enableForegroundService: true` is sufficient to enable notification and background playback features. When `enableForegroundService` is `true`, the toolkit will automatically add any required Android manifest entries for the foreground service and notifications. If `enableForegroundService` is `false` and you attempt to use background playback features, an exception may be thrown on Android.
 
 ### Using Metadata
 
-A `MediaElement` can use metadata for `MediaElement.MetadataTitle`, `MediaElement.MetadataArtist` and `MediaElement.MetadataArtworkUrl`. You can set
-the title or artist to show what is currently playing on lockscreen controls for Windows, Mac Catalyst, iOS, and Android. You can set a local or 
-remote URL with artwork for the lockscreen. It should be at least 1080P for best quality to be displayed. It must be a URL and be either `.jpg` or
- `.png` 
+A `MediaElement` can use metadata for `MediaElement.MetadataTitle`, `MediaElement.MetadataArtist` and `MediaElement.MetadataArtworkSource`. Set the title and
+artist to show what is playing in the system media controls: the media notification on Android, Now Playing on iOS and Mac Catalyst, and the system media
+transport controls on Windows. Set the artwork to show an image next to them. The artwork is also the poster that `MediaElement` shows for audio.
+
+Artwork is supported on Android, iOS, Mac Catalyst, and Windows. For the best quality, use an image of at least 1080p.
+
+`MetadataArtworkSource` is a `MediaSource?` and accepts:
+
+- An `http` or `https` URI, for example `MediaSource.FromUri("https://www.myownpersonaldomain.com/image.jpg")`.
+- A local file, as a full path or a file URI, for example `MediaSource.FromFile(path)`.
+- A file in the app package, for example `MediaSource.FromResource("artwork.png")`. Add the file to the `Resources/Raw` folder of your .NET MAUI project.
+
+#### Use a remote image
 
 ```xaml
-<toolkit:MediaElement 
+<toolkit:MediaElement
     MetadataTitle="Title"
     MetadataArtist="Artist"
-    MetadataArtworkUrl= "http://www.myownpersonaldomain.com/image.jpg" />
+    MetadataArtworkSource="https://www.myownpersonaldomain.com/image.jpg" />
 ```
 
 ```csharp
-    MediaElement.MetadataTitle="Title";
-    MediaElement.MetadataArtist="Artist";
-    MediaElement.MetadataArtworkUrl= MediaSource.FromUri("http://www.myownpersonaldomain.com/image.jpg"); 
+MediaElement.MetadataTitle = "Title";
+MediaElement.MetadataArtist = "Artist";
+MediaElement.MetadataArtworkSource = MediaSource.FromUri("https://www.myownpersonaldomain.com/image.jpg");
 ```
 
-> [!IMPORTANT]
-> You can set the metadata in either XAML or code behind. MetaData for artwork uses `MediaSource` to set source for artwork. You can use File Resource,
-a Url or embedded image from App Package. If you are setting it in code behind you need to set the source in code behind. The source should
-be set last. If you set the metadata in XAML or in constructor this note can be safely ignored.
+#### Use a local file
+
+Pass the full path or the file URI of the file. In XAML, bind `MetadataArtworkSource` to a `MediaSource` created in code, or prefix the path with `filesystem://`.
+
+```csharp
+var artworkPath = Path.Combine(FileSystem.AppDataDirectory, "cover.jpg");
+
+MediaElement.MetadataArtworkSource = MediaSource.FromFile(artworkPath);
+```
+
+#### Use a file in the app package
+
+Add the image to the `Resources/Raw` folder of your .NET MAUI project. A file in the root, such as `Resources/Raw/artwork.png`, is `artwork.png`. A file in a sub folder, such as `Resources/Raw/images/cover.png`, is `images/cover.png`.
+
+```xaml
+<toolkit:MediaElement
+    MetadataTitle="Title"
+    MetadataArtist="Artist"
+    MetadataArtworkSource="embed://artwork.png" />
+```
+
+```csharp
+MediaElement.MetadataArtworkSource = MediaSource.FromResource("artwork.png");
+```
+
+#### How `MetadataArtworkSource` is read in XAML
+
+A string in XAML converts as it does for `Source`:
+
+- `embed://` is a file in the app package.
+- `filesystem://` is a local file.
+- Any other absolute URI, such as `https://`, is a URI.
+- Any other string is a file path. Write a file in the app package as `embed://`, because a relative path such as `images/cover.png` is read as a file path.
+
+#### Things to know
+
+- **Set it before `Source`.** The artwork is read when the media loads, so set `MetadataArtworkSource` and `MetadataArtworkUrl` before `Source`. You can set the metadata in XAML or in code behind. In XAML or in a constructor, the order takes care of itself. In code behind, set `Source` last.
+- **Artwork that can't be loaded is left out.** It never makes the media fail.
+- **Not supported for artwork:**
+  - `StreamMediaSource` is ignored.
+  - The `HttpHeaders` of a `UriMediaSource` aren't sent when the artwork is downloaded.
+- **Windows:** media without usable artwork now clears the thumbnail of the previous media in the system media transport controls. Before, the old thumbnail stayed.
+
+#### Migrate from `MetadataArtworkUrl`
+
+`MetadataArtworkUrl` is a `string` property that still works, but it's marked `[Obsolete]`. Using it gives a compiler warning (`CS0618` in C#, `XC0618` in XAML). The warning is an error only if your project sets `WarningsAsErrors`. Use `MetadataArtworkSource` instead.
+
+- `MetadataArtworkUrl` is used only while `MetadataArtworkSource` is `null`. Nothing is copied between the two properties.
+- `MetadataArtworkSource` wins whenever it isn't `null`, whichever of the two you set first. Set it back to `null` to use `MetadataArtworkUrl` again.
+- Every string that gave artwork in v17.0.0 still gives the same artwork. This includes `http` and `https` URLs, file URIs, absolute paths, Android relative asset paths such as `exoplayer/art.png`, Windows `ms-appx:///` and `ms-appdata:///` URIs, and any URL that Apple's `NSURL` loaded.
+- Local files and files in the app package now work through `MetadataArtworkUrl` too.
+
+| Before | After |
+|---|---|
+| `MetadataArtworkUrl="https://www.myownpersonaldomain.com/image.jpg"` | `MetadataArtworkSource="https://www.myownpersonaldomain.com/image.jpg"` |
+| `MediaElement.MetadataArtworkUrl = "https://www.myownpersonaldomain.com/image.jpg";` | `MediaElement.MetadataArtworkSource = MediaSource.FromUri("https://www.myownpersonaldomain.com/image.jpg");` |
+| `MediaElement.MetadataArtworkUrl = "exoplayer/art.png";` (Android relative asset path) | `MediaElement.MetadataArtworkSource = MediaSource.FromResource("exoplayer/art.png");` |
 
 ### Using TextureView
 
@@ -478,9 +540,10 @@ For more information about using a [`Slider`](xref:Microsoft.Maui.Controls.Slide
 | Aspect | [Aspect](xref:Microsoft.Maui.Aspect) | Determines the scaling mode for the (visual) media that is currently loaded. This is a bindable property. | `Aspect.AspectFit` |
 | CurrentState | `MediaElementState` | Indicates the current status of the control. This is a read-only, bindable property. | `MediaElementState.None` |
 | Duration | `TimeSpan` | Indicates the duration of the currently opened media. This is a read-only, bindable property. | `TimeSpan.Zero` |
-| MetadataArtist | `string` | The name of the artist of the media source. |
-| MetadataArtworkUrl | `MediaSource` | Sets the artwork for media source. | 
-| MetadataTitle | `string` | Sets the Title of the media source. |
+| MetadataArtist | `string` | The name of the artist of the media source. This is a bindable property. | `""` |
+| MetadataArtworkSource | `MediaSource?` | The artwork of the media source: an `http` or `https` URI, a local file, or a file in the app package. Wins over `MetadataArtworkUrl` whenever it isn't `null`. Set it before `Source`. This is a bindable property. See [Using Metadata](#using-metadata). | `null` |
+| MetadataArtworkUrl | `string` | **Obsolete.** Use `MetadataArtworkSource` instead. Still works, and is used while `MetadataArtworkSource` is `null`. This is a bindable property. | `""` |
+| MetadataTitle | `string` | The title of the media source. This is a bindable property. | `""` |
 | Position | `TimeSpan` | Describes the current progress through the media's playback time. This is a read-only, bindable property. If you want to set the `Position` use the `SeekTo()` method. | `TimeSpan.Zero` |
 | ShouldAutoPlay | `bool` | Indicates whether media playback will begin automatically when the `Source` property is set. This is a bindable property. | `false` |
 | ShouldLoopPlayback | `bool` | Describes whether the currently loaded media source should resume playback from the start after reaching its end. This is a bindable property. | `false` |
